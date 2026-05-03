@@ -1,0 +1,7 @@
+^CloneTree_Original_Package$
+^.*\\.Rproj$
+^\\.Rproj\\.user$
+^README\\.Rmd$
+^\\.git$
+^\\.gitignore$
+^\\.DS_Store$
