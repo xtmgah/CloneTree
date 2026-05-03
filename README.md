@@ -40,7 +40,51 @@ The default column names match the original draft package:
 | `Clone` | `"Y"` for trunk clusters, `"N"` for subclones |
 | `no.of.mutations` | branch length in mutation/substitution counts |
 
-Different column names can be supplied to `as_clonetree_input()` or `clone_qc()`.
+The input must be in long format: one row per tumor region and mutation cluster.
+Each cluster should therefore appear once for each sequenced region of the same
+subject. Different column names can be supplied to `as_clonetree_input()` or
+`clone_qc()`.
+
+Before running the example, inspect the bundled input table:
+
+```r
+data(cluster_data_ind2)
+
+unique(cluster_data_ind2$subject)
+```
+
+```text
+[1] "IGC-11-1130"
+```
+
+```r
+head(
+  cluster_data_ind2[, c(
+    "subject", "sampleID", "cluster.no", "CCF", "Clone", "no.of.mutations"
+  )],
+  10
+)
+```
+
+```text
+# A tibble: 10 x 6
+   subject     sampleID        cluster.no      CCF Clone no.of.mutations
+   <chr>       <chr>           <chr>         <dbl> <chr>           <dbl>
+ 1 IGC-11-1130 IGC-11-1130-T01 1          0.973    Y                2722
+ 2 IGC-11-1130 IGC-11-1130-T01 10         0.473    N                2176
+ 3 IGC-11-1130 IGC-11-1130-T01 6          0.000720 N                 847
+ 4 IGC-11-1130 IGC-11-1130-T01 8          0.477    N                 585
+ 5 IGC-11-1130 IGC-11-1130-T01 7          0.390    N                 563
+ 6 IGC-11-1130 IGC-11-1130-T01 11         0.000738 N                 433
+ 7 IGC-11-1130 IGC-11-1130-T01 5          0.511    N                 204
+ 8 IGC-11-1130 IGC-11-1130-T01 12         0        N                  94
+ 9 IGC-11-1130 IGC-11-1130-T02 1          1        Y                2722
+10 IGC-11-1130 IGC-11-1130-T02 10         0.00218  N                2176
+```
+
+If you keep a larger local example table, such as `cluster_data_ind`, it should
+use the same long-table columns shown above. Keep large example datasets outside
+the package repository unless they are intentionally released with the package.
 
 ## Basic Workflow
 
@@ -215,7 +259,7 @@ The current example package build was verified with:
 
 ```text
 devtools::test(".")
-[ FAIL 0 | WARN 0 | SKIP 0 | PASS 14 ]
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 19 ]
 
 devtools::check(".", document = FALSE, manual = FALSE)
 0 errors | 0 warnings | 0 notes
