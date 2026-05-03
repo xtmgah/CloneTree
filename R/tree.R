@@ -219,6 +219,45 @@ ct_terminal_nodes <- function(edges, retained) {
   setdiff(retained, edges$parent[edges$parent %in% retained])
 }
 
+ct_sibling_angles <- function(kids,
+                              is_terminal,
+                              center_angle = 0,
+                              width = 70,
+                              max_abs_angle = 60) {
+  n_kids <- length(kids)
+  angles <- stats::setNames(rep(0, n_kids), kids)
+  if (n_kids == 0) {
+    return(angles)
+  }
+  if (n_kids == 1) {
+    angles[[kids[[1]]]] <- if (is_terminal[[1]]) 0 else center_angle
+    return(angles)
+  }
+
+  fan_width <- min(width, max(50, 28 * (n_kids - 1)))
+  angle_center <- if (all(is_terminal)) 0 else center_angle
+  angle_center <- max(
+    min(angle_center, max_abs_angle - fan_width / 2),
+    -max_abs_angle + fan_width / 2
+  )
+  slots <- seq(angle_center - fan_width / 2, angle_center + fan_width / 2, length.out = n_kids)
+
+  nonterminal <- kids[!is_terminal]
+  terminal <- kids[is_terminal]
+  center_slots <- order(abs(slots - angle_center), slots)
+  assigned <- integer(0)
+  if (length(nonterminal) > 0) {
+    keep <- center_slots[seq_len(length(nonterminal))]
+    angles[nonterminal] <- slots[keep]
+    assigned <- c(assigned, keep)
+  }
+  remaining_slots <- setdiff(seq_along(slots), assigned)
+  if (length(terminal) > 0) {
+    angles[terminal] <- slots[remaining_slots]
+  }
+  angles
+}
+
 #' Compute plotting coordinates for a clone tree
 #'
 #' @param tree A `clonetree` object.
@@ -290,28 +329,7 @@ layout_clone_tree <- function(tree,
     kid_meta <- tree$input$meta[match(kids, tree$input$meta$cluster_id), , drop = FALSE]
     kids <- kids[order(-kid_meta$max_ccf, -kid_meta$mutations, kids)]
     is_terminal <- !kids %in% names(children)
-    angles <- stats::setNames(rep(0, length(kids)), kids)
-    if (length(kids) == 1) {
-      angles[[kids[[1]]]] <- if (is_terminal[[1]]) 0 else center_angle
-    } else if (all(is_terminal)) {
-      terminal_width <- min(16, width / 2)
-      angles[] <- seq(-terminal_width, terminal_width, length.out = length(kids))
-    } else {
-      nonterminal <- kids[!is_terminal]
-      terminal <- kids[is_terminal]
-      nonterminal_width <- width
-      nonterminal_angles <- if (length(nonterminal) == 1) {
-        center_angle
-      } else {
-        seq(center_angle - nonterminal_width / 2, center_angle + nonterminal_width / 2, length.out = length(nonterminal))
-      }
-      angles[nonterminal] <- nonterminal_angles
-      if (length(terminal) == 1) {
-        angles[terminal] <- 0
-      } else if (length(terminal) > 1) {
-        angles[terminal] <- seq(-10, 10, length.out = length(terminal))
-      }
-    }
+    angles <- ct_sibling_angles(kids, is_terminal, center_angle = center_angle, width = width)
     for (i in seq_along(kids)) {
       child <- kids[[i]]
       idx <- edge_lookup[[child]]
@@ -332,7 +350,7 @@ layout_clone_tree <- function(tree,
         px = cx,
         py = cy,
         center_angle = angles[[child]],
-        width = max(18, width * 0.55),
+        width = max(42, width * 0.65),
         depth = depth + 1L
       )
     }
